@@ -101,7 +101,7 @@ The final image contains only the Python 3.13 interpreter, your app, and the ins
 - **Config persistence**: `src/db.json` → `/app/data/db.json` (Docker volume), atomic writes, missing keys auto-repaired.
 - **Server**: removed `reload=True`, added health/status endpoints, safer startup, thread-safe config, configurable host/port/logging.
 - **Docker**: multi-stage **distroless Debian 13** image (`gcr.io/distroless/python3-debian13:nonroot`) — no shell, no package manager, runs as UID 65532; `docker-compose.yml`, `.dockerignore`, `.env.example`, shell-free healthcheck. Dependencies are built with Python 3.13 in a builder stage to match the distroless interpreter.
-- **Maintenance automation**: Dependabot config, CI workflow, smoke test, dev requirements and an update-check script (section 7).
+- **Maintenance automation**: Renovate config, CI workflow, smoke test, dev requirements and an update-check script (section 7).
 
 ## 6. Why distroless? Size and resource notes
 
@@ -134,8 +134,10 @@ The builder stage is thrown away — only the installed packages and app files r
 
 Once this repo is on GitHub, maintenance is mostly automatic:
 
-1. **Dependabot** (`.github/dependabot.yml`) checks `requirements.txt`, `requirements-dev.txt` and GitHub Actions **every Monday** and opens PRs with the new versions. Enable it under repo **Settings → Code security and analysis → Dependabot version updates** (it usually turns on automatically when the config file lands on the default branch).
-2. **CI** (`.github/workflows/ci.yml`) runs on every push/PR: Python 3.13 install, syntax check, a smoke test against a fake VLC server, a security audit (`pip-audit`, report only), and a Docker build of the distroless image. A Dependabot PR is safe to merge when CI is green.
+1. **Renovate** (`renovate.json`) is the dependency bot (Dependabot was removed to avoid duplicate PRs). It checks Python packages, GitHub Actions and Docker images **every Monday** and opens grouped PRs. It also pins Docker images to digests, so moving `nonroot`/`debian13` tags are detected even though those tag names are not semantic versions.
+   - **One-time setup**: install the [Renovate GitHub App](https://github.com/apps/renovate) on `AuthorShin/VLCRV` (choose "All repositories" or select just this one). It reads `renovate.json` from `main` automatically. A **Dependency Dashboard** issue will be created for overview/approval.
+   - Docker updates are grouped into one PR (`python:3.13-slim` builder + distroless runtime + healthcheck path) so the Python versions stay in sync; review that PR before merging.
+2. **CI** (`.github/workflows/ci.yml`) runs on every push/PR: Python 3.13 install, syntax check, a smoke test against a fake VLC server, a security audit (`pip-audit`, report only), and a Docker build of the distroless image. A Renovate PR is safe to merge when CI is green.
 3. **Manual check** any time:
    ```bash
    ./scripts/update-deps.sh       # prints OK / OUTDATED for every pinned package
@@ -149,9 +151,8 @@ Once this repo is on GitHub, maintenance is mostly automatic:
    docker compose up -d --build   # rebuild on the VM
    curl http://<VM-IP>:8004/health
    ```
-5. **Base images**: Dependabot cannot version-bump tags like `nonroot` or `debian13` (they aren't semantic versions). Check the distroless releases occasionally and, if moving to a new Debian/Python version, change **both** lines together: `python:3.13-slim` (builder) and `gcr.io/distroless/python3-debian13:nonroot` (runtime), plus the healthcheck path in `docker-compose.yml`. Renovate (`renovate.json`) is a good alternative if you want automatic PRs for these tags/digests.
-6. **Fully reproducible builds (optional)**: direct packages are pinned but transitive ones float. Run `pip-compile -o requirements.lock.txt requirements.txt` and have the Dockerfile install that lock file if you want byte-for-byte repeatable images.
-7. **VLC on `34j5kl`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
+5. **Fully reproducible builds (optional)**: direct packages are pinned but transitive ones float. Run `pip-compile -o requirements.lock.txt requirements.txt` and have the Dockerfile install that lock file if you want byte-for-byte repeatable images.
+6. **VLC on `34j5kl`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
 
 **GHCR publishing** (`.github/workflows/publish.yml`): a push to `main` publishes `ghcr.io/authorshin/vlcrv:latest` and a `sha-<commit>` tag; a `v*` tag also publishes that version tag. The workflow logs in with the built-in `GITHUB_TOKEN` (`packages: write`), so no extra secret is needed. The package is public because the repo is public. On the VM, update with:
 

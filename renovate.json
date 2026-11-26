@@ -1,0 +1,27 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Etc/UTC",
+  "schedule": ["after 6am and before 10am every monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "dependencyDashboard": { "enabled": true },
+  "packageRules": [
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "groupName": "Docker base images",
+      "pinDigests": true,
+      "commitMessagePrefix": "docker: "
+    },
+    {
+      "matchManagers": ["pip_requirements"],
+      "groupName": "Python dependencies",
+      "commitMessagePrefix": "deps: "
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "commitMessagePrefix": "ci: "
+    }
+  ]
+}
