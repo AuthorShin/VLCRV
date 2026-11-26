@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
     <title>VLC remote control</title>
-    <link rel="stylesheet" href="/static/style.css?v=0.2.0" />
+    <link rel="stylesheet" href="/static/style.css?v=0.2.1" />
   </head>
   <style>
     body {
@@ -25,9 +25,9 @@
   </style>
   <body class=" touch-manipulation bg-neutral-900 text-neutral-400 p-5 flex h-[80%] justify-center items-center ">
     <div class="max-w-md container mx-auto">
-      <div class="flex flex-col space-y-2 text-center tracking-wide">
-        <a class="underline" href="/">VLC REMOTE CONTROL</a>
-        <a class="text-sm hover:underline focus:underline" href="/config">config</a>
+      <div class="header-stack">
+        <a class="header-title" href="/">VLC Remote Control</a>
+        <a class="header-link" href="/config">config</a>
       </div>
       <div class="bg-neutral-800 h-96 mt-10 rounded-3xl flex justify-between">
         <button id="move-back"
