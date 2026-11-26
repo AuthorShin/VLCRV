@@ -74,6 +74,21 @@ class VLCClient:
 
         try:
             response = self._get("/requests/status.xml", params)
+        except requests.Timeout:
+            message = (
+                f"Timed out reaching VLC at {self.base_url}. On the VLC PC: "
+                "check the Web interface is enabled, 'HTTP server address' is "
+                f"empty/0.0.0.0, and the firewall allows TCP {self.port}."
+            )
+            log.warning(message)
+            return False, message
+        except requests.ConnectionRefused:
+            message = (
+                f"Connection refused by {self.base_url}. Is VLC running with "
+                "its Web interface enabled?"
+            )
+            log.warning(message)
+            return False, message
         except requests.RequestException as exc:
             log.warning("Cannot reach VLC at %s: %s", self.base_url, exc)
             return False, f"Cannot reach VLC at {self.base_url} ({type(exc).__name__})"

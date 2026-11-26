@@ -189,7 +189,15 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
 
 ## Troubleshooting
 
-- **`Cannot reach VLC`** → check `Your-PC` resolves from the VM (`ping Your-PC`), VLC is running, and firewall allows port 8080.
+- **`Cannot reach VLC` / `Timed out reaching VLC`** → check `Your-PC` resolves from the VM, VLC is running, and firewall allows port 8080.
+- **VLC's web page opens on the PC itself but not on the phone/VM** → VLC is either bound to localhost or blocked by the PC's firewall. On the VLC PC (Windows):
+  1. Open Command Prompt and run `netstat -ano | findstr :8080`. If it shows `127.0.0.1:8080`, VLC is bound to localhost: in VLC **Tools → Preferences → All → Interface**, clear **HTTP server address** (or set `0.0.0.0`), then restart VLC.
+  2. Allow inbound TCP 8080 (PowerShell as admin):
+     ```powershell
+     New-NetFirewallRule -DisplayName "VLC Web Interface 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private
+     ```
+  3. From the VM/phone, `curl -u :YOUR_PASSWORD http://<PC-IP>:8080/requests/status.xml` should return XML (a 401 means it is reachable and only the password needs fixing).
+- **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
 - **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.

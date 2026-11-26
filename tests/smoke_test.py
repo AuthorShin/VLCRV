@@ -62,6 +62,7 @@ def main() -> None:
             assert "cdn.tailwindcss.com" not in home.text
             assert client.get("/static/style.css").status_code == 200
             assert client.get("/help").status_code == 200
+            assert client.get("/favicon.ico").status_code == 204
             config = client.get("/config")
             assert config.status_code == 200
             assert "cdn.tailwindcss.com" not in config.text
