@@ -215,6 +215,7 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
     ```powershell
     Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Outbound' } | Set-NetFirewallRule -RemoteAddress Internet
     ```
+  - To explicitly block **all inbound TCP except 8080**, run `.\scripts\block-tcp-except-8080.ps1` as Administrator. Windows Firewall has no "exclude this port" option, so the script creates a Block rule with the port ranges `1-8079,8081-65535`. Because 8080 is not in that list, the separate Allow rule still wins for VLC. This is stricter than the default (which already blocks inbound), and it will also block other inbound TCP services such as RDP unless you add similar allow rules for them.
 - **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
