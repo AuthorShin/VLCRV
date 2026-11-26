@@ -1,0 +1,4 @@
+# Development / CI only — not installed in the container image.
+httpx==0.28.1          # TestClient used by tests/smoke_test.py
+pip-audit==2.10.1      # security advisory scan in CI
+pip-tools==7.7.0       # optional: regenerate a fully locked requirements.lock.txt

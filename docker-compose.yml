@@ -1,0 +1,42 @@
+services:
+  vlc-remote:
+    build: .
+    image: vlc-remote-control:latest
+    container_name: vlc-remote-control
+    restart: unless-stopped
+
+    # Host networking makes the container reachable directly at the VM's LAN
+    # IP, so the QR code printed in the logs works from a phone.
+    network_mode: host
+
+    environment:
+      # PC that is playing VLC (change in .env if needed).
+      VLC_HOST: ${VLC_HOST:-34j5kl}
+      VLC_HTTP_PORT: ${VLC_HTTP_PORT:-8080}
+      VLC_HTTP_PASSWORD: ${VLC_HTTP_PASSWORD:-changeme}
+      # Port on which the phone reaches this web UI.
+      PORT: ${PORT:-8004}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PYTHONUNBUFFERED: "1"
+
+    volumes:
+      # Keeps button/command customisations across container restarts.
+      - remote-config:/app/data
+
+    healthcheck:
+      # No shell in distroless, so use the exec form with the absolute python path.
+      test:
+        - CMD
+        - /usr/bin/python3.13
+        - -c
+        - >-
+          import os, urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '8004') + '/health', timeout=2)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  remote-config:

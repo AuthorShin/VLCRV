@@ -1,6 +1,10 @@
-fastapi==0.101.0
-uvicorn==0.23.2
-jinja2==3.1.2
-keyboard==0.13.5
-python-multipart==0.0.6
-qrcode==7.4.2
+# Runtime dependencies (latest PyPI versions, verified 2026-11-26)
+# The original `keyboard` package was removed: it can only inject keystrokes on
+# the machine it runs on, but VLC runs on a different PC (34j5kl). VLC is now
+# controlled over its built-in HTTP interface using `requests`.
+fastapi==0.165.0
+uvicorn==0.54.0
+jinja2==3.1.6
+python-multipart==0.0.34
+qrcode==8.2
+requests==2.34.2

@@ -1,84 +1,170 @@
-# VLC Remote Control
+# VLC Remote Control (Docker edition)
 
-This Python program provides a web-based remote control interface for VLC media player. It allows users to control VLC playback from a different device using a web browser.
+A phone-friendly web remote for VLC. **The web UI runs in a Docker container on a VM; VLC keeps playing on the PC named `34j5kl`.** The container talks to VLC over VLC's built-in HTTP interface, so no shared keyboard, X server, or privileged container is needed.
 
-<p align="center">
-  <img width="200"  src="img/screenshot.jpg">
-</p>
-
-## Use case
-
-- 🎥 You are watching a movie on your computer or another screen
-- 🛏️ You want to get comfortable and unwind while watching
-- 📱 Use your phone to manage VLC playback!
-
-## Features
-- Play, pause, volume control, move forward and back, full-screen and quit functionalities.
-- Customizable shortcuts for VLC commands.
-- User-friendly web interface (heavily inspired by the [Apple TV Remote](https://support.apple.com/en-gb/HT201664#setup)).
-
-## Prerequisites
-- Python 3.x
-- VLC media player installed on the system.
-
-## Installation
-1. Clone the repository:
-
-```bash
-git clone https://github.com/franciscobmacedo/vlc-remote-control.git
+```
+phone ──(LAN / Wi-Fi)──> VM:8004 (this container) ──(LAN)──> 34j5kl:8080 (VLC)
 ```
 
-1. Create and activate a virtual environment:
+The original keyboard-injection backend was replaced because the `keyboard` library can only inject keys on the machine it runs on — useless when VLC is on another PC. The **web UI (remote buttons + config page) is unchanged**.
 
-**MacOS/Linux:**
-```bash
-python -m venv venv
-source venv/bin/activate
-```
+## 1. Enable VLC's web interface on PC `34j5kl`
 
-**Windows (:warning: not tested):**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+1. In VLC: **Tools → Preferences**, set **Show settings** to **All**.
+2. Go to **Interface → Main interfaces** and tick **Web**.
+3. Go to **Interface → Main interfaces → Lua → Lua HTTP** and set a password (e.g. `changeme`). Leave the username empty.
+4. Restart VLC. Check `http://34j5kl:8080` from another machine — it should ask for the password.
+5. If access from other machines is blocked, edit VLC's `lua/http/.hosts` file on that PC and add the VM's IP address (see [VideoLAN's guide](https://wiki.videolan.org/Control_VLC_via_a_browser/)).
 
-2. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
+See also [How-To Geek's walkthrough](https://www.howtogeek.com/117261/how-to-activate-vlcs-web-interface-control-vlc-from-a-browser-use-any-smartphone-as-a-remote/).
 
-## Usage
+## 2. Run the container on the VM
 
-1. On the machine that is running VLC, start the server:
+### Option A — install from GHCR (recommended)
+
+The image is published to `ghcr.io/authorshin/vlcrv` by GitHub Actions on every push to `main`.
 
 ```bash
-python run.py
+mkdir -p /vlc-remote-control && cd /vlc-remote-control
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLCRV/main/docker-compose.ghcr.yml
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLCRV/main/.env.example
+cp .env.example .env      # set VLC_HTTP_PASSWORD to the password from step 1
+docker compose -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.ghcr.yml up -d
+docker compose -f docker-compose.ghcr.yml logs -f   # URL + QR code
 ```
 
+Or with plain Docker (no compose file):
 
-1. On the device that you want to use as a remote control (for example, your phone) scan the QR code you see on the terminal or open your web browser and navigate to the url displayed on the terminal (something like http://192.168.1.92:8004). This device needs to be connected to the same wifi network as the machine that is running VLC.
-2. Customize the commands in the config page to match your VLC shortcuts ([see here for help on how to set them up](https://www.vlchelp.com/vlc-media-player-shortcuts/)).
-3. Use the buttons on the web interface to control the VLC media player.
+```bash
+docker pull ghcr.io/authorshin/vlcrv:latest
+docker run -d --name vlc-remote-control --restart unless-stopped --network host \
+  -e VLC_HOST=34j5kl -e VLC_HTTP_PORT=8080 -e VLC_HTTP_PASSWORD=changeme \
+  -e PORT=8004 -v vlc-remote-config:/app/data ghcr.io/authorshin/vlcrv:latest
+```
 
+### Option B — build from source
 
-## Configuration
+```bash
+cd /vlc-remote-control
+cp .env.example .env      # set VLC_HTTP_PASSWORD to the password from step 1
+git pull
+docker compose up -d --build
+docker compose logs -f    # shows the URL + QR code
+```
 
-In the [settings file](/src/settings.py), you can also edit the following variables:
+Open **`http://<VM-IP>:8004`** on the phone (same Wi-Fi/LAN as the VM). The QR code in the logs points to the same URL. `curl http://<VM-IP>:8004/health` returns `{"status":"ok",...}`.
 
-- `OPEN_VLC_COMMAND`: Specifies the shortcut used to open the VLC player.
-- `PORT`: Defines the port on which the server will run.
-- `CONFIG_PATH`: Points to the location of the configuration file.
-- `DEFAULT_SHORTCUTS`: Contains the default shortcuts that will be used when the user chooses to reset settings.
+To stop: `docker compose down`. Configuration changes from the config page survive restarts (stored in a named Docker volume mounted at `/app/data`).
 
-## Automation
-You can also automate the process of starting the virtual environment, installing dependencies and running the server by running the `run.sh` script.
+## 3. Configuration page (`/config`)
 
+The same UI is kept, but each field now holds a **VLC HTTP command** instead of a keystroke:
 
-## Contributing
-Contributions are welcome! Please fork the repository and create a pull request with your proposed changes.
+| Button | Default value | What it does |
+| --- | --- | --- |
+| play_pause | `pl_pause` | Play / pause toggle |
+| fullscreen | `key\|toggle-fullscreen` | Toggle fullscreen |
+| mute | `key\|vol-mute` | Toggle mute |
+| volume_up | `volume\|+10` | Volume +10 |
+| volume_down | `volume\|-10` | Volume -10 |
+| move_forward | `seek\|+10s` | Jump 10 s forward |
+| move_back | `seek\|-10s` | Jump 10 s back |
+| quit | `key\|quit` | Quit VLC (use `pl_stop` if your build ignores it) |
+| open_vlc | *(empty)* | Optional command sent once at container start, e.g. `pl_play` |
 
-## License
-MIT License
+Format: `command` or `command|val`. Legacy strings like `command=seek&val=+10s` are also accepted. Full VLC command list: `pl_play`, `pl_pause`, `pl_forcepause`, `pl_forceresume`, `pl_stop`, `pl_next`, `pl_previous`, `pl_empty`, `fullscreen`, `volume`, `seek`, `key`, `rate`, `snapshot`, ...
 
-## Support
-If you encounter any problems or have questions, please open an issue on the GitHub repository.
+## 4. Environment variables (`.env`)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `VLC_HOST` | `34j5kl` | Hostname/IP of the PC running VLC |
+| `VLC_HTTP_PORT` | `8080` | VLC HTTP interface port |
+| `VLC_HTTP_PASSWORD` | `changeme` | VLC Lua HTTP password (**must match**) |
+| `PORT` | `8004` | Port of this web UI on the VM |
+| `PUBLIC_URL` | *(empty)* | Override the URL printed / shown as QR |
+| `LOG_LEVEL` | `info` | Uvicorn log level |
+
+`network_mode: host` is used so the container is reachable at the VM's own LAN IP (and hostname resolution of `34j5kl` works from the container). If you prefer bridge networking, replace it with `ports: ["8004:8004"]` and set `PUBLIC_URL=http://<VM-IP>:8004` so the QR code is correct.
+
+API endpoints: `/` (remote UI), `/config` (config page), `/action/<button>` (send a command), `/status` (VLC state, useful for debugging), `/health` (container liveness).
+
+### Distroless notes
+The final image contains only the Python 3.13 interpreter, your app, and the installed packages — there is no shell, so `docker compose exec ... sh` will not work. To inspect a running container, temporarily switch the image to the debug variant `gcr.io/distroless/python3-debian13:debug` (which includes a shell), then rebuild. The container runs as nonroot (UID 65532); only `/app/data` is writable, which is where `db.json` is stored via the named volume. Because distroless python3-debian13 uses Python 3.13, the builder stage uses `python:3.13-slim` so compiled dependencies (e.g. `pydantic-core`) are ABI-compatible.
+
+## 5. What was updated
+
+- **Dependencies** (latest PyPI versions, verified 2026-11-26): `fastapi 0.165.0`, `uvicorn 0.54.0`, `jinja2 3.1.6`, `python-multipart 0.0.34`, `qrcode 8.2`, `requests 2.34.2`. The obsolete `keyboard 0.13.5` dependency was removed.
+- **Starlette 1.x compatibility**: `TemplateResponse` now uses the current `(request, name, context)` signature — the old call style breaks on modern FastAPI.
+- **Backend**: keystroke injection → VLC HTTP requests; works across machines, no root/`--privileged`/`/dev/input` mounts required.
+- **Config persistence**: `src/db.json` → `/app/data/db.json` (Docker volume), atomic writes, missing keys auto-repaired.
+- **Server**: removed `reload=True`, added health/status endpoints, safer startup, thread-safe config, configurable host/port/logging.
+- **Docker**: multi-stage **distroless Debian 13** image (`gcr.io/distroless/python3-debian13:nonroot`) — no shell, no package manager, runs as UID 65532; `docker-compose.yml`, `.dockerignore`, `.env.example`, shell-free healthcheck. Dependencies are built with Python 3.13 in a builder stage to match the distroless interpreter.
+- **Maintenance automation**: Dependabot config, CI workflow, smoke test, dev requirements and an update-check script (section 7).
+
+## 6. Why distroless? Size and resource notes
+
+**Benefits**
+- **Small attack surface** — no shell (`sh`/`bash`), no `apt`, no package manager, no compilers, no package caches. An attacker who gets code execution has nothing to pivot with, and OS-package CVEs are largely absent.
+- **Non-root by default** — the `:nonroot` tag runs as UID 65532. Only `/app/data` is writable, so a compromised process cannot rewrite the app code.
+- **Smaller and faster to pull/start** — far fewer layers to download and unpack; less disk used on the VM.
+- **Consistent glibc base** — Debian 13 userspace means normal Python wheels work without Alpine/musl surprises.
+
+**How it compares** (measured registry layer sizes, amd64, compressed, 2026-11-24):
+
+| Image | Base | With app+deps | Shell/apt | libc | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `gcr.io/distroless/python3-debian13:nonroot` | **21.5 MiB** | **~30–32 MiB** | no/no | glibc | **Current choice** — secure, small, Python 3.13 |
+| `python:3.13-slim` | 41.1 MiB | ~50 MiB | yes/yes | glibc | Easier to debug; ~60% larger base |
+| `python:3.13` (full) | 394.9 MiB | ~405 MiB | yes/yes | glibc | Build tools + docs; unnecessary for runtime |
+| `python:3.13-alpine` | 16.2 MiB | ~25 MiB | yes/yes | musl | Smallest, but musl-specific wheel/DNS/SSL quirks |
+| `scratch` + manual Python | ~0 | ~20 MiB+ | no/no | — | You must bundle the interpreter and CA certs yourself |
+
+The builder stage is thrown away — only the installed packages and app files reach the runtime image.
+
+**Resource needs** — distroless mainly saves **disk size and attack surface**, not RAM/CPU:
+- **Disk**: ~30–32 MiB image; writable layer is essentially just `db.json` (a few hundred bytes) plus the small named volume.
+- **RAM**: ~30–60 MB RSS at idle (Python + FastAPI + uvicorn). Distroless vs slim barely changes this — the interpreter dominates. One uvicorn worker keeps it low.
+- **CPU**: negligible; sleeps until a phone sends a request. **Startup**: ~1 second.
+
+**Trade-offs**: no interactive shell (use the `:debug` tag temporarily), no runtime `apt install` (rebuild instead), healthchecks must use exec form with an absolute interpreter path — all handled here.
+
+## 7. Maintenance: tracking and updating dependencies
+
+Once this repo is on GitHub, maintenance is mostly automatic:
+
+1. **Dependabot** (`.github/dependabot.yml`) checks `requirements.txt`, `requirements-dev.txt` and GitHub Actions **every Monday** and opens PRs with the new versions. Enable it under repo **Settings → Code security and analysis → Dependabot version updates** (it usually turns on automatically when the config file lands on the default branch).
+2. **CI** (`.github/workflows/ci.yml`) runs on every push/PR: Python 3.13 install, syntax check, a smoke test against a fake VLC server, a security audit (`pip-audit`, report only), and a Docker build of the distroless image. A Dependabot PR is safe to merge when CI is green.
+3. **Manual check** any time:
+   ```bash
+   ./scripts/update-deps.sh       # prints OK / OUTDATED for every pinned package
+   pip-audit -r requirements.txt  # known vulnerabilities (needs requirements-dev.txt)
+   ```
+4. **To apply an update**:
+   ```bash
+   # edit requirements.txt (and/or requirements-dev.txt) with the new versions
+   pip install -r requirements.txt -r requirements-dev.txt
+   python tests/smoke_test.py
+   docker compose up -d --build   # rebuild on the VM
+   curl http://<VM-IP>:8004/health
+   ```
+5. **Base images**: Dependabot cannot version-bump tags like `nonroot` or `debian13` (they aren't semantic versions). Check the distroless releases occasionally and, if moving to a new Debian/Python version, change **both** lines together: `python:3.13-slim` (builder) and `gcr.io/distroless/python3-debian13:nonroot` (runtime), plus the healthcheck path in `docker-compose.yml`. Renovate (`renovate.json`) is a good alternative if you want automatic PRs for these tags/digests.
+6. **Fully reproducible builds (optional)**: direct packages are pinned but transitive ones float. Run `pip-compile -o requirements.lock.txt requirements.txt` and have the Dockerfile install that lock file if you want byte-for-byte repeatable images.
+7. **VLC on `34j5kl`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
+
+**GHCR publishing** (`.github/workflows/publish.yml`): a push to `main` publishes `ghcr.io/authorshin/vlcrv:latest` and a `sha-<commit>` tag; a `v*` tag also publishes that version tag. The workflow logs in with the built-in `GITHUB_TOKEN` (`packages: write`), so no extra secret is needed. The package is public because the repo is public. On the VM, update with:
+
+```bash
+docker compose -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+## Troubleshooting
+
+- **`Cannot reach VLC`** → check `34j5kl` resolves from the VM (`ping 34j5kl`), VLC is running, and firewall allows port 8080.
+- **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
+- **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
+- **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.
+
+MIT License (see `LICENSE`).
