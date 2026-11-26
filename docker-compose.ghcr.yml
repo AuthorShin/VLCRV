@@ -3,7 +3,7 @@
 #   docker compose -f docker-compose.ghcr.yml up -d
 services:
   vlc-remote:
-    image: ghcr.io/authorshin/vlcrv:latest
+    image: ghcr.io/authorshin/vlcrc:latest
     container_name: vlc-remote-control
     restart: unless-stopped
 
