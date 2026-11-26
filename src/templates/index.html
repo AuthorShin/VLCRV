@@ -47,13 +47,23 @@
                 class="w-full flex justify-center items-center"
                 data-action="play_pause"
                 data-long="false">
-          <svg xmlns="http://www.w3.org/2000/svg"
+          <svg id="icon-play"
+               xmlns="http://www.w3.org/2000/svg"
                fill="none"
                viewBox="0 0 24 24"
                stroke-width="1.5"
                stroke="currentColor"
                class="w-12 h-12">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+          </svg>
+          <svg id="icon-pause"
+               xmlns="http://www.w3.org/2000/svg"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke-width="1.5"
+               stroke="currentColor"
+               class="w-12 h-12 hidden">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
           </svg>
         </button>
         <button id="move-forward"
@@ -139,14 +149,38 @@
     <script>
       const LONG_TIME_INTERVAL = 200;
       let interval;
+
+      const playIcon = document.getElementById("icon-play");
+      const pauseIcon = document.getElementById("icon-pause");
+      const playButton = document.getElementById("play-pause");
+
+      const setPlaying = (isPlaying) => {
+        if (!playIcon || !pauseIcon || !playButton) return;
+        playIcon.classList.toggle("hidden", isPlaying);
+        pauseIcon.classList.toggle("hidden", !isPlaying);
+        playButton.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
+      };
+
+      const refreshStatus = async () => {
+        try {
+          const response = await fetch("/status");
+          const data = await response.json();
+          if (typeof data.state === "string") setPlaying(data.state === "playing");
+        } catch (_) {
+          // VLC unreachable - keep the last known icon.
+        }
+      };
+
       const runAction = (action, long) => {
         fetch(`/action/${action}`);
+        if (action === "play_pause") setTimeout(refreshStatus, 350);
         if (long) {
           interval = setInterval(function () {
             fetch(`/action/${action}`);
           }, LONG_TIME_INTERVAL);
         }
       };
+
       const buttons = document.querySelectorAll("button");
       for (let button of buttons) {
         button.addEventListener("touchstart", function (event) {
@@ -168,7 +202,9 @@
 
         button.style.userSelect = "none";
       }
-     
+
+      refreshStatus();
+      setInterval(() => { if (!document.hidden) refreshStatus(); }, 10000);
     </script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-# v0.1.0 — Docker/VLC HTTP edition
+# VLC Remote Control — Docker/VLC HTTP edition
 
 A phone-friendly web remote for VLC. The web UI runs in a small Docker container
 on a VM and controls VLC on another PC (`Your-PC` by default) through VLC's
@@ -11,6 +11,7 @@ are preserved.
 - **Published to GHCR** — `ghcr.io/authorshin/vlc-rc:latest`, plus `sha-<commit>` and `v*` tags.
 - **Safe updates** — Renovate weekly PRs (pip, Actions, Docker digests) gated by CI smoke tests.
 - **Persistent config** — button/command overrides survive restarts via a Docker volume.
+- **Live play state** — the play/pause button shows the correct icon by polling VLC's `/status` endpoint.
 
 ## Install
 ```bash

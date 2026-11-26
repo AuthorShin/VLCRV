@@ -60,8 +60,13 @@ def main() -> None:
             assert home.status_code == 200
             assert "/static/style.css" in home.text
             assert 'name="color-scheme"' in home.text
+            assert 'id="icon-play"' in home.text
+            assert 'id="icon-pause"' in home.text
+            assert "refreshStatus" in home.text
             assert "cdn.tailwindcss.com" not in home.text
-            assert client.get("/static/style.css").status_code == 200
+            css = client.get("/static/style.css")
+            assert css.status_code == 200
+            assert ".hidden { display: none; }" in css.text
             assert client.get("/help").status_code == 200
             assert client.get("/favicon.ico").status_code == 204
             config = client.get("/config")
