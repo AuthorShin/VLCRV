@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src import settings
@@ -40,6 +41,12 @@ app.add_middleware(
 
 templates = Jinja2Templates(
     directory=os.path.join(os.path.dirname(__file__), "templates")
+)
+# Local stylesheet: no CDN needed, so the UI works on an offline LAN.
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
+    name="static",
 )
 
 

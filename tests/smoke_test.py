@@ -56,7 +56,11 @@ def main() -> None:
         assert to_params("pl_pause") == {"command": "pl_pause"}
 
         with TestClient(app) as client:
-            assert client.get("/").status_code == 200
+            home = client.get("/")
+            assert home.status_code == 200
+            assert "/static/style.css" in home.text
+            assert "cdn.tailwindcss.com" not in home.text
+            assert client.get("/static/style.css").status_code == 200
             assert client.get("/config").status_code == 200
             assert client.get("/health").json()["status"] == "ok"
             assert client.get("/action/unknown").status_code == 404

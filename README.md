@@ -103,6 +103,7 @@ The final image contains only the Python 3.13 interpreter, your app, and the ins
 - **Config persistence**: `src/db.json` → `/app/data/db.json` (Docker volume), atomic writes, missing keys auto-repaired.
 - **Server**: removed `reload=True`, added health/status endpoints, safer startup, thread-safe config, configurable host/port/logging.
 - **Docker**: multi-stage **distroless Debian 13** image (`gcr.io/distroless/python3-debian13:nonroot`) — no shell, no package manager, runs as UID 65532; `docker-compose.yml`, `.dockerignore`, `.env.example`, shell-free healthcheck. Dependencies are built with Python 3.13 in a builder stage to match the distroless interpreter.
+- **Self-contained UI**: replaced the Tailwind CDN, Google Fonts and Alpine.js dependencies with a local `src/static/style.css` and vanilla JS toast, so the styled remote works even when the phone has no internet.
 - **Maintenance automation**: Renovate config, CI workflow, smoke test, dev requirements and an update-check script (section 7).
 
 ## 6. Why distroless? Size and resource notes
@@ -181,5 +182,6 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
   ```
   (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
 - **QR code shows `172.x.x.x`** → the container is on Docker's bridge network, which the phone can't reach. Use the supplied compose file (`network_mode: host`) or `docker run --network host -p 8004:8004` and set `PUBLIC_URL=http://<VM-IP>:8004` in `.env` so the QR code uses the VM address.
+- **Page still looks unstyled** → after pulling a new image, do a hard refresh / clear the browser cache; older HTML referenced a Tailwind CDN that may have been cached. The current image serves `/static/style.css` locally.
 
 MIT License (see `LICENSE`).

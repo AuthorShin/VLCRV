@@ -5,15 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VLC remote control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet" />
-    <script defer
-            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css" />
   </head>
   <style>
     body {
@@ -67,10 +59,7 @@
       </div>
     </div>
     {% if message %}
-      <div class="fixed top-3"
-           x-data="{show: true}"
-           x-show="show"
-           x-init="setTimeout(() => show = false, 2000)">
+      <div id="toast" class="fixed top-3">
         <div id="toast-default"
              class="flex items-center w-full max-w-xs p-4 bg-neutral-600 text-white rounded-lg shadow "
              role="alert">
@@ -92,5 +81,13 @@
         </div>
       </div>
     {% endif %}
+    <script>
+      const toast = document.getElementById("toast");
+      if (toast) {
+        const hideToast = () => (toast.style.display = "none");
+        setTimeout(hideToast, 2000);
+        document.getElementById("toast-close").addEventListener("click", hideToast);
+      }
+    </script>
   </body>
 </html>
