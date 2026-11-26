@@ -56,6 +56,3 @@ DEFAULT_SHORTCUTS = {
     # once at startup (e.g. "pl_play"). Leave empty to do nothing.
     "open_vlc": "",
 }
-
-# Backwards-compatible alias for older code / documentation.
-DEFAULT_COMMANDS = DEFAULT_SHORTCUTS

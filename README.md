@@ -22,6 +22,8 @@ See also [How-To Geek's walkthrough](https://www.howtogeek.com/117261/how-to-act
 
 ## 2. Run the container on the VM
 
+For local development without Docker, `./run.sh` creates a `.venv`, installs requirements and runs the server directly. Docker is the supported deployment.
+
 ### Option A — install from GHCR (recommended)
 
 The image is published to `ghcr.io/authorshin/vlcrv` by GitHub Actions on every push to `main`.
@@ -189,35 +191,44 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
 
 ## Troubleshooting
 
-- **`Cannot reach VLC` / `Timed out reaching VLC`** → check `Your-PC` resolves from the VM, VLC is running, and firewall allows port 8080.
-- **VLC's web page opens on the PC itself but not on the phone/VM** → VLC is either bound to localhost or blocked by the PC's firewall. On the VLC PC (Windows):
-  1. Open Command Prompt and run `netstat -ano | findstr :8080`. If it shows `127.0.0.1:8080`, VLC is bound to localhost: in VLC **Tools → Preferences → All → Interface**, clear **HTTP server address** (or set `0.0.0.0`), then restart VLC.
-  2. Allow inbound TCP 8080 (PowerShell as admin):
-     ```powershell
-     New-NetFirewallRule -DisplayName "VLC Web Interface 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private
-     ```
-  3. Easiest: run `.\scripts\fix-vlc-windows.ps1` from an **Administrator PowerShell** on that PC. It opens the firewall for all profiles and restarts VLC with `--http-host=0.0.0.0 --http-port=8080 --http-password=changeme` (pass `-Password yourpassword` to match the container). Expected `netstat` result: `TCP 0.0.0.0:8080 LISTENING`.
-  4. From the VM/phone, `curl -u :YOUR_PASSWORD http://<PC-IP>:8080/requests/status.xml` should return XML (a 401 means it is reachable and only the password needs fixing). From inside the container:
-     ```bash
-     docker exec vlc-remote-control /usr/bin/python3.13 -c "import socket,sys; s=socket.socket(); s.settimeout(3); print('port open' if s.connect_ex(('192.168.11.107',8080))==0 else 'port BLOCKED'); s.close()"
-     ```
-  5. If the PC is on Wi-Fi, check the router for **AP/Client isolation** — it blocks device-to-device traffic even when both are on the same SSID. The PC must be able to reach the VM *and* vice versa.
-- **Keep the network profile Public** → you don't have to switch to Private. Run `.\scripts\allow-vlc-public.ps1 -Password changeme` as Administrator. It leaves the network as Public, makes sure the Public profile honours inbound rules (`AllowInboundRules=True`, `AllowLocalFirewallRules=True`), creates an allow rule scoped to **Public only**, and restarts VLC bound to `0.0.0.0`. Add `-SkipVlcRestart` if VLC is already listening correctly.
-- **Existing `Block` rules for VLC (TCP + UDP)** → Windows evaluates **Block before Allow**, and there is no rule priority/weighting, so an allow rule can never override them. You also cannot add "exclude this IP" to a block rule. Inspect them:
-  ```powershell
-  Get-NetFirewallRule | Where-Object DisplayName -match 'VLC' | Select DisplayName,Direction,Action,Enabled,Profile | Format-Table
-  ```
-  - If they are **Inbound** blocks: simply disable them. The Public profile's default inbound action is already `Block`, so everything except your explicit TCP/8080 allow rule is still dropped.
-    ```powershell
-    Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Inbound' } | Disable-NetFirewallRule
-    ```
-  - If they are **Outbound** blocks (meant to stop VLC reaching the internet): scope them to `Internet` instead of `Any`, so LAN replies to the VM are still permitted:
-    ```powershell
-    Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Outbound' } | Set-NetFirewallRule -RemoteAddress Internet
-    ```
-  - To explicitly block **all inbound TCP except 8080**, run `.\scripts\block-tcp-except-8080.ps1` as Administrator. Windows Firewall has no "exclude this port" option, so the script creates a Block rule with the port ranges `1-8079,8081-65535`. Because 8080 is not in that list, the separate Allow rule still wins for VLC. This is stricter than the default (which already blocks inbound), and it will also block other inbound TCP services such as RDP unless you add similar allow rules for them.
-- **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
+### VLC connectivity (Windows PC)
+
+1. Check the listener with `netstat -ano | findstr :8080`. If it shows `127.0.0.1:8080`, VLC is bound to localhost — clear **HTTP server address** in VLC's **Tools → Preferences → All → Interface**, or let the helper script handle it.
+2. Run the single Windows helper in **Administrator PowerShell**:
+
+   ```powershell
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+   .\scripts\setup-vlc-windows.ps1 -Password changeme
+   ```
+
+   It keeps the network on **Public**, makes sure the profile honours inbound rules, creates/recreates `VLC Web Interface 8080` (TCP 8080, Allow, Public), restarts VLC with `--http-host=0.0.0.0 --http-port=8080 --http-password=changeme`, and prints the resulting rules/listeners.
+
+   Useful switches:
+   - `-Profile Private` — use the Private profile instead.
+   - `-SkipVlcRestart` — keep the current VLC process.
+   - `-DisableVlcBlockRules` — disable auto-created inbound `Block` rules for VLC.
+   - `-BlockAllTcpExceptPort` — also add a Block rule for TCP `1-8079,8081-65535` (Windows Firewall has no "exclude port" option, so this is how you express "all TCP except 8080"). Note it also blocks RDP etc.
+
+   **Why block rules matter:** Windows evaluates explicit **Block** rules before Allow rules, and there is no rule priority/weighting, so an allow rule can never override a matching block rule. If you keep outbound VLC block rules, scope them to the internet so LAN replies still work:
+
+   ```powershell
+   Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Outbound' } | Set-NetFirewallRule -RemoteAddress Internet
+   ```
+
+3. Verify from the VM/phone:
+
+   ```bash
+   curl -u :YOUR_PASSWORD http://<PC-IP>:8080/requests/status.xml   # XML = OK, 401 = wrong password
+   docker exec vlc-remote-control /usr/bin/python3.13 -c "import socket; s=socket.socket(); s.settimeout(3); print('OPEN' if s.connect_ex(('<PC-IP>',8080))==0 else 'BLOCKED')"
+   ```
+
+4. If the PC is on Wi-Fi, check the router for **AP/Client isolation** — it blocks device-to-device traffic even on the same SSID.
+
+### Other issues
+
+- **`Cannot reach VLC` / `Timed out reaching VLC`** → check `Your-PC` resolves from the VM, VLC is running, and the firewall allows port 8080.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
+- **QR code shows a bare IP or `172.x.x.x`** → set `PUBLIC_URL` to a full URL, e.g. `PUBLIC_URL=http://<VM-IP>:8004`, and use the provided compose file (`network_mode: host`) or `docker run --network host -p 8004:8004`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
 - **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.
 - **`PermissionError: /app/data/db.json.tmp`** → the volume was created when the container ran as root, but the distroless image runs as UID 65532. Fix it once, then recreate the container:
@@ -227,7 +238,6 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
   docker compose -f docker-compose.ghcr.yml up -d --force-recreate
   ```
   (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
-- **QR code shows `172.x.x.x`** → the container is on Docker's bridge network, which the phone can't reach. Use the supplied compose file (`network_mode: host`) or `docker run --network host -p 8004:8004` and set `PUBLIC_URL=http://<VM-IP>:8004` in `.env` so the QR code uses the VM address.
 - **Page still looks unstyled** → after pulling a new image, do a hard refresh / clear the browser cache; older HTML referenced a Tailwind CDN that may have been cached. The current image serves `/static/style.css` locally.
 
 MIT License (see `LICENSE`).
