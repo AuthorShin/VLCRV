@@ -45,6 +45,25 @@ docker run -d --name vlc-remote-control --restart unless-stopped --network host 
   -e PORT=8004 -v vlc-remote-config:/app/data ghcr.io/authorshin/vlcrv:latest
 ```
 
+### Option C — fully offline VM (no internet)
+
+The container needs **no internet at runtime**: CSS, JS and fonts are local, and all Python packages are baked into the image. To install on a VM with no internet, prepare the image on a machine that has it and transfer three files (`vlcrv.tar`, `docker-compose.ghcr.yml`, `.env.example`):
+
+On the connected machine:
+```bash
+docker pull ghcr.io/authorshin/vlcrv:latest
+docker save ghcr.io/authorshin/vlcrv:latest -o vlcrv.tar
+```
+
+On the offline VM:
+```bash
+docker load -i vlcrv.tar
+cp .env.example .env      # set VLC_HTTP_PASSWORD
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+Do **not** run `docker compose pull` there — the image is already local.
+
 ### Option B — build from source
 
 ```bash

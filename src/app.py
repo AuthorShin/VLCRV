@@ -55,6 +55,11 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
+@app.get("/help", response_class=HTMLResponse)
+async def help_page(request: Request):
+    return templates.TemplateResponse(request=request, name="help.html")
+
+
 @app.get("/health")
 def health():
     """Liveness check for Docker and load balancers."""

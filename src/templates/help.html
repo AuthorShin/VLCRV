@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VLC remote control - help</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body class="touch-manipulation bg-neutral-900 text-neutral-400 p-5 flex h-[80%] justify-center items-center">
+    <div class="max-w-md container mx-auto">
+      <div class="text-center tracking-wide">
+        <a class="underline" href="/">VLC REMOTE CONTROL</a>
+      </div>
+      <div class="text-center text-sm mt-10">
+        <p>Commands sent to VLC over your local network.</p>
+      </div>
+      <div class="w-full shadow-md rounded">
+        <div class="px-8 pt-6 mb-4 text-neutral-200">
+          <div class="mb-4">
+            <div class="block text-sm font-bold mb-2">Format</div>
+            <p class="text-sm">Each field is <span class="font-bold">command</span> or <span class="font-bold">command|val</span>. Example: <span class="font-bold">seek|+10s</span> jumps 10 seconds forward.</p>
+          </div>
+          <div class="mb-4">
+            <div class="block text-sm font-bold mb-2">Useful commands</div>
+            <p class="text-sm">pl_play, pl_pause, pl_stop, pl_next, pl_previous, fullscreen, volume, seek, key, rate, snapshot.</p>
+          </div>
+          <div class="mb-4">
+            <div class="block text-sm font-bold mb-2">Key names</div>
+            <p class="text-sm">For <span class="font-bold">key</span>: play-pause, vol-mute, toggle-fullscreen, quit, jump+short, jump-short.</p>
+          </div>
+          <div class="mb-4">
+            <div class="block text-sm font-bold mb-2">Volume / seek values</div>
+            <p class="text-sm">volume: +10, -10, 128, 50%. seek: +10s, -10s, 50%.</p>
+          </div>
+          <div class="mb-4">
+            <div class="block text-sm font-bold mb-2">Requirements</div>
+            <p class="text-sm">VLC on the target PC must have its Web interface enabled and the same password as VLC_HTTP_PASSWORD. Nothing here needs internet access.</p>
+          </div>
+        </div>
+        <div class="text-center">
+          <a class="text-sm hover:underline focus:underline" href="/config">&lt;&lt; back to config</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

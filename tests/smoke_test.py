@@ -61,7 +61,12 @@ def main() -> None:
             assert "/static/style.css" in home.text
             assert "cdn.tailwindcss.com" not in home.text
             assert client.get("/static/style.css").status_code == 200
-            assert client.get("/config").status_code == 200
+            assert client.get("/help").status_code == 200
+            config = client.get("/config")
+            assert config.status_code == 200
+            assert "cdn.tailwindcss.com" not in config.text
+            assert "fonts.googleapis.com" not in config.text
+            assert "vlchelp.com" not in config.text
             assert client.get("/health").json()["status"] == "ok"
             assert client.get("/action/unknown").status_code == 404
 

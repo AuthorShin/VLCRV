@@ -12,8 +12,9 @@ def lan_ip() -> str:
     """Best-effort detection of the IP the phone should connect to."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        # Does not send any packets; just asks the OS which interface routes out.
-        sock.connect(("8.8.8.8", 80))
+        # No packet is sent and no DNS/internet is used. This only asks the OS
+        # which local interface would route to an arbitrary documentation IP.
+        sock.connect(("192.0.2.1", 80))
         return sock.getsockname()[0]
     except OSError:
         try:
