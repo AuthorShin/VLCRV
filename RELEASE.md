@@ -15,14 +15,14 @@ are preserved.
 ## Install
 ```bash
 mkdir -p /vlc-remote-control && cd /vlc-remote-control
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/docker-compose.ghcr.yml
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/.env.example
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlc-rc/main/docker-compose.ghcr.yml
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlc-rc/main/.env.example
 cp .env.example .env        # set VLC_HTTP_PASSWORD to match VLC on Your-PC
 docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
 ```
 Open `http://<VM-IP>:8004` on your phone. Full instructions are in the
-[README](https://github.com/AuthorShin/VLC-RC#readme).
+[README](https://github.com/AuthorShin/vlc-rc#readme).
 
 ## Sources and acknowledgment
 This project is a Docker/HTTP-based evolution of the excellent original project:
