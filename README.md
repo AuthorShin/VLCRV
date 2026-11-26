@@ -26,12 +26,12 @@ For local development without Docker, `./run.sh` creates a `.venv`, installs req
 
 ### Option A — install from GHCR (recommended)
 
-The image is published to `ghcr.io/authorshin/vlcrc` by GitHub Actions on every push to `main`.
+The image is published to `ghcr.io/authorshin/vlc-rc` by GitHub Actions on every push to `main`.
 
 ```bash
 mkdir -p /vlc-remote-control && cd /vlc-remote-control
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlcrc/main/docker-compose.ghcr.yml
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlcrc/main/.env.example
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/docker-compose.ghcr.yml
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/.env.example
 cp .env.example .env      # set VLC_HTTP_PASSWORD to the password from step 1
 docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
@@ -41,25 +41,25 @@ docker compose -f docker-compose.ghcr.yml logs -f   # URL + QR code
 Or with plain Docker (no compose file):
 
 ```bash
-docker pull ghcr.io/authorshin/vlcrc:latest
+docker pull ghcr.io/authorshin/vlc-rc:latest
 docker run -d --name vlc-remote-control --restart unless-stopped --network host \
   -e VLC_HOST=Your-PC -e VLC_HTTP_PORT=8080 -e VLC_HTTP_PASSWORD=changeme \
-  -e PORT=8004 -v vlc-remote-config:/app/data ghcr.io/authorshin/vlcrc:latest
+  -e PORT=8004 -v vlc-remote-config:/app/data ghcr.io/authorshin/vlc-rc:latest
 ```
 
 ### Option C — fully offline VM (no internet)
 
-The container needs **no internet at runtime**: CSS, JS and fonts are local, and all Python packages are baked into the image. To install on a VM with no internet, prepare the image on a machine that has it and transfer three files (`vlcrc.tar`, `docker-compose.ghcr.yml`, `.env.example`):
+The container needs **no internet at runtime**: CSS, JS and fonts are local, and all Python packages are baked into the image. To install on a VM with no internet, prepare the image on a machine that has it and transfer three files (`vlc-rc.tar`, `docker-compose.ghcr.yml`, `.env.example`):
 
 On the connected machine:
 ```bash
-docker pull ghcr.io/authorshin/vlcrc:latest
-docker save ghcr.io/authorshin/vlcrc:latest -o vlcrc.tar
+docker pull ghcr.io/authorshin/vlc-rc:latest
+docker save ghcr.io/authorshin/vlc-rc:latest -o vlc-rc.tar
 ```
 
 On the offline VM:
 ```bash
-docker load -i vlcrc.tar
+docker load -i vlc-rc.tar
 cp .env.example .env      # set VLC_HTTP_PASSWORD
 docker compose -f docker-compose.ghcr.yml up -d
 ```
@@ -159,7 +159,7 @@ The builder stage is thrown away — only the installed packages and app files r
 Once this repo is on GitHub, maintenance is mostly automatic:
 
 1. **Renovate** (`renovate.json`) is the dependency bot (Dependabot was removed to avoid duplicate PRs). It checks Python packages, GitHub Actions and Docker images **every Monday** and opens grouped PRs. It also pins Docker images to digests, so moving `nonroot`/`debian13` tags are detected even though those tag names are not semantic versions.
-   - **One-time setup**: install the [Renovate GitHub App](https://github.com/apps/renovate) on `AuthorShin/vlcrc` (choose "All repositories" or select just this one). It reads `renovate.json` from `main` automatically. A **Dependency Dashboard** issue will be created for overview/approval.
+   - **One-time setup**: install the [Renovate GitHub App](https://github.com/apps/renovate) on `AuthorShin/VLC-RC` (choose "All repositories" or select just this one). It reads `renovate.json` from `main` automatically. A **Dependency Dashboard** issue will be created for overview/approval.
    - Docker updates are grouped into one PR (`python:3.13-slim` builder + distroless runtime + healthcheck path) so the Python versions stay in sync; review that PR before merging.
 2. **CI** (`.github/workflows/ci.yml`) runs on every push/PR: Python 3.13 install, syntax check, a smoke test against a fake VLC server, a security audit (`pip-audit`, report only), and a Docker build of the distroless image. A Renovate PR is safe to merge when CI is green.
 3. **Manual check** any time:
@@ -178,7 +178,7 @@ Once this repo is on GitHub, maintenance is mostly automatic:
 5. **Fully reproducible builds (optional)**: direct packages are pinned but transitive ones float. Run `pip-compile -o requirements.lock.txt requirements.txt` and have the Dockerfile install that lock file if you want byte-for-byte repeatable images.
 6. **VLC on `Your-PC`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
 
-**GHCR publishing** (`.github/workflows/publish.yml`): a push to `main` publishes `ghcr.io/authorshin/vlcrc:latest` and a `sha-<commit>` tag; a `v*` tag also publishes that version tag. The image name comes from `${{ github.repository }}`, so it follows the repository rename automatically. GitHub redirects the old `VLCRV` URLs, but the old GHCR package `ghcr.io/authorshin/vlcrv` remains until you delete it in the package settings. The workflow logs in with the built-in `GITHUB_TOKEN` (`packages: write`), so no extra secret is needed. The package is public because the repo is public. On the VM, update with:
+**GHCR publishing** (`.github/workflows/publish.yml`): a push to `main` publishes `ghcr.io/authorshin/vlc-rc:latest` and a `sha-<commit>` tag; a `v*` tag also publishes that version tag. The image name comes from `${{ github.repository }}` (`AuthorShin/VLC-RC`); `docker/metadata-action` lowercases it to `ghcr.io/authorshin/vlc-rc` automatically. GitHub redirects the old `VLCRV` URLs, but the old GHCR package `ghcr.io/authorshin/vlcrv` remains until you delete it in the package settings. The workflow logs in with the built-in `GITHUB_TOKEN` (`packages: write`), so no extra secret is needed. The package is public because the repo is public. On the VM, update with:
 
 ```bash
 docker compose -f docker-compose.ghcr.yml pull

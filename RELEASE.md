@@ -8,21 +8,21 @@ are preserved.
 ## Highlights
 - **Cross-machine control** — no keyboard injection, X server or privileged container needed.
 - **Distroless image** — multi-stage build on Debian 13 / Python 3.13, runs as nonroot, about 30 MiB.
-- **Published to GHCR** — `ghcr.io/authorshin/vlcrc:latest`, plus `sha-<commit>` and `v*` tags.
+- **Published to GHCR** — `ghcr.io/authorshin/vlc-rc:latest`, plus `sha-<commit>` and `v*` tags.
 - **Safe updates** — Renovate weekly PRs (pip, Actions, Docker digests) gated by CI smoke tests.
 - **Persistent config** — button/command overrides survive restarts via a Docker volume.
 
 ## Install
 ```bash
 mkdir -p /vlc-remote-control && cd /vlc-remote-control
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlcrc/main/docker-compose.ghcr.yml
-curl -fsSLO https://raw.githubusercontent.com/AuthorShin/vlcrc/main/.env.example
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/docker-compose.ghcr.yml
+curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLC-RC/main/.env.example
 cp .env.example .env        # set VLC_HTTP_PASSWORD to match VLC on Your-PC
 docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
 ```
 Open `http://<VM-IP>:8004` on your phone. Full instructions are in the
-[README](https://github.com/AuthorShin/vlcrc#readme).
+[README](https://github.com/AuthorShin/VLC-RC#readme).
 
 ## Sources and acknowledgment
 This project is a Docker/HTTP-based evolution of the excellent original project:
