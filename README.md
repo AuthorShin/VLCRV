@@ -125,7 +125,7 @@ The final image contains only the Python 3.13 interpreter, your app, and the ins
 - **Server**: removed `reload=True`, added health/status endpoints, safer startup, thread-safe config, configurable host/port/logging.
 - **Docker**: multi-stage **distroless Debian 13** image (`gcr.io/distroless/python3-debian13:nonroot`) — no shell, no package manager, runs as UID 65532; `docker-compose.yml`, `.dockerignore`, `.env.example`, shell-free healthcheck. Dependencies are built with Python 3.13 in a builder stage to match the distroless interpreter.
 - **Self-contained UI**: replaced the Tailwind CDN, Google Fonts and Alpine.js dependencies with a local `src/static/style.css` and vanilla JS toast, so the styled remote works even when the phone has no internet.
-- **Live play state**: the play/pause button shows the correct icon by polling `/status`, and refreshes shortly after a tap.
+- **Live play state**: the play/pause button checks `/status` once on page load and refreshes shortly after a tap (no periodic polling).
 - **Maintenance automation**: Renovate config, CI workflow, smoke test, dev requirements and an update-check script (section 7).
 
 ## 6. Why distroless? Size and resource notes

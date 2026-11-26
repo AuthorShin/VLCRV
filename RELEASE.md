@@ -11,7 +11,7 @@ are preserved.
 - **Published to GHCR** — `ghcr.io/authorshin/vlc-rc:latest`, plus `sha-<commit>` and `v*` tags.
 - **Safe updates** — Renovate weekly PRs (pip, Actions, Docker digests) gated by CI smoke tests.
 - **Persistent config** — button/command overrides survive restarts via a Docker volume.
-- **Live play state** — the play/pause button shows the correct icon by polling VLC's `/status` endpoint.
+- **Live play state** — the play/pause button shows the correct icon on load and after each tap.
 
 ## Install
 ```bash
