@@ -11,7 +11,7 @@ services:
 
     environment:
       # PC that is playing VLC (change in .env if needed).
-      VLC_HOST: ${VLC_HOST:-34j5kl}
+      VLC_HOST: ${VLC_HOST:-Your-PC}
       VLC_HTTP_PORT: ${VLC_HTTP_PORT:-8080}
       VLC_HTTP_PASSWORD: ${VLC_HTTP_PASSWORD:-changeme}
       # Port on which the phone reaches this web UI.

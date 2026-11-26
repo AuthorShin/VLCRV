@@ -1,6 +1,6 @@
 # Runtime dependencies (latest PyPI versions, verified 2026-11-26)
 # The original `keyboard` package was removed: it can only inject keystrokes on
-# the machine it runs on, but VLC runs on a different PC (34j5kl). VLC is now
+# the machine it runs on, but VLC runs on a different PC (Your-PC). VLC is now
 # controlled over its built-in HTTP interface using `requests`.
 fastapi==0.165.0
 uvicorn==0.54.0

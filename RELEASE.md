@@ -1,7 +1,7 @@
 # v0.1.0 — Docker/VLC HTTP edition
 
 A phone-friendly web remote for VLC. The web UI runs in a small Docker container
-on a VM and controls VLC on another PC (`34j5kl` by default) through VLC's
+on a VM and controls VLC on another PC (`Your-PC` by default) through VLC's
 built-in HTTP interface. The original Apple-TV-style remote UI and config page
 are preserved.
 
@@ -17,7 +17,7 @@ are preserved.
 mkdir -p /vlc-remote-control && cd /vlc-remote-control
 curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLCRV/main/docker-compose.ghcr.yml
 curl -fsSLO https://raw.githubusercontent.com/AuthorShin/VLCRV/main/.env.example
-cp .env.example .env        # set VLC_HTTP_PASSWORD to match VLC on 34j5kl
+cp .env.example .env        # set VLC_HTTP_PASSWORD to match VLC on Your-PC
 docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
 ```

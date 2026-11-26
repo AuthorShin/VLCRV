@@ -3,8 +3,8 @@
 VLC exposes ``/requests/status.xml`` on the machine that plays the video.
 Commands are passed as query parameters, e.g.::
 
-    GET http://34j5kl:8080/requests/status.xml?command=pl_pause
-    GET http://34j5kl:8080/requests/status.xml?command=seek&val=%2B10s
+    GET http://Your-PC:8080/requests/status.xml?command=pl_pause
+    GET http://Your-PC:8080/requests/status.xml?command=seek&val=%2B10s
 
 Authentication is HTTP Basic with an empty username and the password set in
 VLC's Lua HTTP preferences.

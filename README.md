@@ -1,21 +1,21 @@
 # VLC Remote Control (Docker edition)
 
-A phone-friendly web remote for VLC. **The web UI runs in a Docker container on a VM; VLC keeps playing on the PC named `34j5kl`.** The container talks to VLC over VLC's built-in HTTP interface, so no shared keyboard, X server, or privileged container is needed.
+A phone-friendly web remote for VLC. **The web UI runs in a Docker container on a VM; VLC keeps playing on the PC named `Your-PC`.** The container talks to VLC over VLC's built-in HTTP interface, so no shared keyboard, X server, or privileged container is needed.
 
 ```
-phone ──(LAN / Wi-Fi)──> VM:8004 (this container) ──(LAN)──> 34j5kl:8080 (VLC)
+phone ──(LAN / Wi-Fi)──> VM:8004 (this container) ──(LAN)──> Your-PC:8080 (VLC)
 ```
 
 The original keyboard-injection backend was replaced because the `keyboard` library can only inject keys on the machine it runs on — useless when VLC is on another PC. The **web UI (remote buttons + config page) is unchanged**.
 
 **Based on [franciscobmacedo/vlc-remote-control](https://github.com/franciscobmacedo/vlc-remote-control)** — this repo keeps the original browser remote UI and adapts it for Docker + VLC's HTTP interface. See [Acknowledgments](#acknowledgments).
 
-## 1. Enable VLC's web interface on PC `34j5kl`
+## 1. Enable VLC's web interface on PC `Your-PC`
 
 1. In VLC: **Tools → Preferences**, set **Show settings** to **All**.
 2. Go to **Interface → Main interfaces** and tick **Web**.
 3. Go to **Interface → Main interfaces → Lua → Lua HTTP** and set a password (e.g. `changeme`). Leave the username empty.
-4. Restart VLC. Check `http://34j5kl:8080` from another machine — it should ask for the password.
+4. Restart VLC. Check `http://Your-PC:8080` from another machine — it should ask for the password.
 5. If access from other machines is blocked, edit VLC's `lua/http/.hosts` file on that PC and add the VM's IP address (see [VideoLAN's guide](https://wiki.videolan.org/Control_VLC_via_a_browser/)).
 
 See also [How-To Geek's walkthrough](https://www.howtogeek.com/117261/how-to-activate-vlcs-web-interface-control-vlc-from-a-browser-use-any-smartphone-as-a-remote/).
@@ -41,7 +41,7 @@ Or with plain Docker (no compose file):
 ```bash
 docker pull ghcr.io/authorshin/vlcrv:latest
 docker run -d --name vlc-remote-control --restart unless-stopped --network host \
-  -e VLC_HOST=34j5kl -e VLC_HTTP_PORT=8080 -e VLC_HTTP_PASSWORD=changeme \
+  -e VLC_HOST=Your-PC -e VLC_HTTP_PORT=8080 -e VLC_HTTP_PASSWORD=changeme \
   -e PORT=8004 -v vlc-remote-config:/app/data ghcr.io/authorshin/vlcrv:latest
 ```
 
@@ -81,14 +81,14 @@ Format: `command` or `command|val`. Legacy strings like `command=seek&val=+10s` 
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VLC_HOST` | `34j5kl` | Hostname/IP of the PC running VLC |
+| `VLC_HOST` | `Your-PC` | Hostname/IP of the PC running VLC |
 | `VLC_HTTP_PORT` | `8080` | VLC HTTP interface port |
 | `VLC_HTTP_PASSWORD` | `changeme` | VLC Lua HTTP password (**must match**) |
 | `PORT` | `8004` | Port of this web UI on the VM |
 | `PUBLIC_URL` | *(empty)* | Override the URL printed / shown as QR |
 | `LOG_LEVEL` | `info` | Uvicorn log level |
 
-`network_mode: host` is used so the container is reachable at the VM's own LAN IP (and hostname resolution of `34j5kl` works from the container). If you prefer bridge networking, replace it with `ports: ["8004:8004"]` and set `PUBLIC_URL=http://<VM-IP>:8004` so the QR code is correct.
+`network_mode: host` is used so the container is reachable at the VM's own LAN IP (and hostname resolution of `Your-PC` works from the container). If you prefer bridge networking, replace it with `ports: ["8004:8004"]` and set `PUBLIC_URL=http://<VM-IP>:8004` so the QR code is correct.
 
 API endpoints: `/` (remote UI), `/config` (config page), `/action/<button>` (send a command), `/status` (VLC state, useful for debugging), `/health` (container liveness).
 
@@ -154,7 +154,7 @@ Once this repo is on GitHub, maintenance is mostly automatic:
    curl http://<VM-IP>:8004/health
    ```
 5. **Fully reproducible builds (optional)**: direct packages are pinned but transitive ones float. Run `pip-compile -o requirements.lock.txt requirements.txt` and have the Dockerfile install that lock file if you want byte-for-byte repeatable images.
-6. **VLC on `34j5kl`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
+6. **VLC on `Your-PC`** is an external dependency too: after VLC upgrades, re-check that the Web interface is enabled, the password still matches `VLC_HTTP_PASSWORD`, and `/status` shows `reachable: true`.
 
 **GHCR publishing** (`.github/workflows/publish.yml`): a push to `main` publishes `ghcr.io/authorshin/vlcrv:latest` and a `sha-<commit>` tag; a `v*` tag also publishes that version tag. The workflow logs in with the built-in `GITHUB_TOKEN` (`packages: write`), so no extra secret is needed. The package is public because the repo is public. On the VM, update with:
 
@@ -169,7 +169,7 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
 
 ## Troubleshooting
 
-- **`Cannot reach VLC`** → check `34j5kl` resolves from the VM (`ping 34j5kl`), VLC is running, and firewall allows port 8080.
+- **`Cannot reach VLC`** → check `Your-PC` resolves from the VM (`ping Your-PC`), VLC is running, and firewall allows port 8080.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
 - **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.
