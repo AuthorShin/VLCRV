@@ -239,5 +239,6 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
   ```
   (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
 - **Page still looks unstyled** → after pulling a new image, do a hard refresh / clear the browser cache; older HTML referenced a Tailwind CDN that may have been cached. The current image serves `/static/style.css` locally.
+- **Colors are inverted (remote panel is white, links look yellow)** → the phone browser is forcing its own dark mode over the page. The templates now declare `<meta name="color-scheme" content="dark">` so browsers should respect the intentional dark theme. Disable Chrome's **Auto Dark Mode** / **Force Dark Web content** (or equivalent in your browser) and hard-refresh. To confirm the CSS is current, open `http://<VM-IP>:8004/static/style.css` in the phone browser — it must contain `.bg-neutral-800 { background-color: #262626; }` and `.rounded-3xl`.
 
 MIT License (see `LICENSE`).

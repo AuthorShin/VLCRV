@@ -59,6 +59,7 @@ def main() -> None:
             home = client.get("/")
             assert home.status_code == 200
             assert "/static/style.css" in home.text
+            assert 'name="color-scheme"' in home.text
             assert "cdn.tailwindcss.com" not in home.text
             assert client.get("/static/style.css").status_code == 200
             assert client.get("/help").status_code == 200
