@@ -175,9 +175,8 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
 - **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.
 - **`PermissionError: /app/data/db.json.tmp`** → the volume was created when the container ran as root, but the distroless image runs as UID 65532. Fix it once, then recreate the container:
   ```bash
-  # named volume from either compose file:
-  docker run --rm -v vlc-remote-config:/data alpine:3 chown -R 65532:65532 /data
-  # plain docker run example uses the same volume name vlc-remote-config
+  docker volume ls                       # find the volume, e.g. vlc-remote-control_remote-config
+  docker run --rm -v <volume-name>:/data alpine:3 chown -R 65532:65532 /data
   docker compose -f docker-compose.ghcr.yml up -d --force-recreate
   ```
   (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
