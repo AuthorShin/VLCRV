@@ -202,6 +202,7 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
      docker exec vlc-remote-control /usr/bin/python3.13 -c "import socket,sys; s=socket.socket(); s.settimeout(3); print('port open' if s.connect_ex(('192.168.11.107',8080))==0 else 'port BLOCKED'); s.close()"
      ```
   5. If the PC is on Wi-Fi, check the router for **AP/Client isolation** — it blocks device-to-device traffic even when both are on the same SSID. The PC must be able to reach the VM *and* vice versa.
+- **Keep the network profile Public** → you don't have to switch to Private. Run `.\scripts\allow-vlc-public.ps1 -Password changeme` as Administrator. It leaves the network as Public, makes sure the Public profile honours inbound rules (`AllowInboundRules=True`, `AllowLocalFirewallRules=True`), creates an allow rule scoped to **Public only**, and restarts VLC bound to `0.0.0.0`. Add `-SkipVlcRestart` if VLC is already listening correctly.
 - **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
