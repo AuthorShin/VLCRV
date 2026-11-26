@@ -94,10 +94,18 @@ async def update_config(request: Request):
 
     if save is not None:
         shortcuts.update(data)
-        message = "Configurations updated successfully"
+        message = (
+            "Configurations updated successfully"
+            if shortcuts.persistent
+            else "Updated in memory only - config storage is not writable (see container logs)"
+        )
     elif reset is not None:
         shortcuts.reset()
-        message = "Configuration reset successfully"
+        message = (
+            "Configuration reset successfully"
+            if shortcuts.persistent
+            else "Reset in memory only - config storage is not writable (see container logs)"
+        )
 
     return templates.TemplateResponse(
         request=request,

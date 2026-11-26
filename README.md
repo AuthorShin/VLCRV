@@ -173,5 +173,14 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
 - **Buttons do nothing** → visit `/status`; if `state` is `stopped`, load something into VLC. `quit` may need changing to `pl_stop` on some VLC versions.
+- **`PermissionError: /app/data/db.json.tmp`** → the volume was created when the container ran as root, but the distroless image runs as UID 65532. Fix it once, then recreate the container:
+  ```bash
+  # named volume from either compose file:
+  docker run --rm -v vlc-remote-config:/data alpine:3 chown -R 65532:65532 /data
+  # plain docker run example uses the same volume name vlc-remote-config
+  docker compose -f docker-compose.ghcr.yml up -d --force-recreate
+  ```
+  (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
+- **QR code shows `172.x.x.x`** → the container is on Docker's bridge network, which the phone can't reach. Use the supplied compose file (`network_mode: host`) or `docker run --network host -p 8004:8004` and set `PUBLIC_URL=http://<VM-IP>:8004` in `.env` so the QR code uses the VM address.
 
 MIT License (see `LICENSE`).

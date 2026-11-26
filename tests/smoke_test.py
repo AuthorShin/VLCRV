@@ -44,7 +44,13 @@ def main() -> None:
         from fastapi.testclient import TestClient
 
         from src.app import app
+        from src.shortcuts import Shortcuts
         from src.vlc_client import to_params
+
+        # A read-only config path must not crash startup (root-owned volume).
+        fallback = Shortcuts("/proc/forbidden/db.json")
+        assert fallback.get("play_pause") == "pl_pause"
+        assert fallback.persistent is False
 
         assert to_params("seek|+10s") == {"command": "seek", "val": "+10s"}
         assert to_params("pl_pause") == {"command": "pl_pause"}
