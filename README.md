@@ -240,6 +240,14 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
   ```
   (For a bind mount, run `chown -R 65532:65532 /path/on/host`.) The app now survives this error and runs with in-memory commands until the ownership is fixed — check the config page message.
 - **Page still looks unstyled** → after pulling a new image, do a hard refresh / clear the browser cache; older HTML referenced a Tailwind CDN that may have been cached. The current image serves `/static/style.css` locally.
+- **Pulled a new image but the UI seems unchanged** → first check the VM is actually running the new image:
+  ```bash
+  grep 'image:' docker-compose.ghcr.yml        # must be ghcr.io/authorshin/vlc-rc:latest
+  docker compose -f docker-compose.ghcr.yml images
+  docker inspect -f '{{.Image}} {{.Created}}' vlc-remote-control
+  docker exec vlc-remote-control /usr/bin/python3.13 -c "import urllib.request; print('icon-pause' in urllib.request.urlopen('http://127.0.0.1:8004/').read().decode())"
+  ```
+  The last command must print `True`. If it prints `False`, you are still on the old container — re-download `docker-compose.ghcr.yml` from this repo and run `docker compose -f docker-compose.ghcr.yml pull && up -d --force-recreate`. If it prints `True`, clear the phone browser cache / open `http://<VM-IP>:8004/?v=2`.
 - **Colors are inverted (remote panel is white, links look yellow)** → the phone browser is forcing its own dark mode over the page. The templates now declare `<meta name="color-scheme" content="dark">` so browsers should respect the intentional dark theme. Disable Chrome's **Auto Dark Mode** / **Force Dark Web content** (or equivalent in your browser) and hard-refresh. To confirm the CSS is current, open `http://<VM-IP>:8004/static/style.css` in the phone browser — it must contain `.bg-neutral-800 { background-color: #262626; }` and `.rounded-3xl`.
 
 MIT License (see `LICENSE`).
