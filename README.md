@@ -8,6 +8,8 @@ phone ──(LAN / Wi-Fi)──> VM:8004 (this container) ──(LAN)──> 34j
 
 The original keyboard-injection backend was replaced because the `keyboard` library can only inject keys on the machine it runs on — useless when VLC is on another PC. The **web UI (remote buttons + config page) is unchanged**.
 
+**Based on [franciscobmacedo/vlc-remote-control](https://github.com/franciscobmacedo/vlc-remote-control)** — this repo keeps the original browser remote UI and adapts it for Docker + VLC's HTTP interface. See [Acknowledgments](#acknowledgments).
+
 ## 1. Enable VLC's web interface on PC `34j5kl`
 
 1. In VLC: **Tools → Preferences**, set **Show settings** to **All**.
@@ -160,6 +162,10 @@ Once this repo is on GitHub, maintenance is mostly automatic:
 docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
 ```
+
+## Acknowledgments
+
+This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-control](https://github.com/franciscobmacedo/vlc-remote-control)** by Francisco Macedo. The web UI templates (`src/templates/index.html`, `src/templates/config.html`) and the concept of a phone browser as a VLC remote come from that repository. The backend was rewritten to talk to VLC over its HTTP interface so the container can run on a different machine from the one playing the video. Thanks for the original work!
 
 ## Troubleshooting
 
