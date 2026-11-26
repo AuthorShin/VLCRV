@@ -196,7 +196,12 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
      ```powershell
      New-NetFirewallRule -DisplayName "VLC Web Interface 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private
      ```
-  3. From the VM/phone, `curl -u :YOUR_PASSWORD http://<PC-IP>:8080/requests/status.xml` should return XML (a 401 means it is reachable and only the password needs fixing).
+  3. Easiest: run `.\scripts\fix-vlc-windows.ps1` from an **Administrator PowerShell** on that PC. It opens the firewall for all profiles and restarts VLC with `--http-host=0.0.0.0 --http-port=8080 --http-password=changeme` (pass `-Password yourpassword` to match the container). Expected `netstat` result: `TCP 0.0.0.0:8080 LISTENING`.
+  4. From the VM/phone, `curl -u :YOUR_PASSWORD http://<PC-IP>:8080/requests/status.xml` should return XML (a 401 means it is reachable and only the password needs fixing). From inside the container:
+     ```bash
+     docker exec vlc-remote-control /usr/bin/python3.13 -c "import socket,sys; s=socket.socket(); s.settimeout(3); print('port open' if s.connect_ex(('192.168.11.107',8080))==0 else 'port BLOCKED'); s.close()"
+     ```
+  5. If the PC is on Wi-Fi, check the router for **AP/Client isolation** — it blocks device-to-device traffic even when both are on the same SSID. The PC must be able to reach the VM *and* vice versa.
 - **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
