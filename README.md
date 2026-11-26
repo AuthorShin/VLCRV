@@ -203,6 +203,18 @@ This project is a Docker/HTTP-based evolution of **[franciscobmacedo/vlc-remote-
      ```
   5. If the PC is on Wi-Fi, check the router for **AP/Client isolation** — it blocks device-to-device traffic even when both are on the same SSID. The PC must be able to reach the VM *and* vice versa.
 - **Keep the network profile Public** → you don't have to switch to Private. Run `.\scripts\allow-vlc-public.ps1 -Password changeme` as Administrator. It leaves the network as Public, makes sure the Public profile honours inbound rules (`AllowInboundRules=True`, `AllowLocalFirewallRules=True`), creates an allow rule scoped to **Public only**, and restarts VLC bound to `0.0.0.0`. Add `-SkipVlcRestart` if VLC is already listening correctly.
+- **Existing `Block` rules for VLC (TCP + UDP)** → Windows evaluates **Block before Allow**, and there is no rule priority/weighting, so an allow rule can never override them. You also cannot add "exclude this IP" to a block rule. Inspect them:
+  ```powershell
+  Get-NetFirewallRule | Where-Object DisplayName -match 'VLC' | Select DisplayName,Direction,Action,Enabled,Profile | Format-Table
+  ```
+  - If they are **Inbound** blocks: simply disable them. The Public profile's default inbound action is already `Block`, so everything except your explicit TCP/8080 allow rule is still dropped.
+    ```powershell
+    Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Inbound' } | Disable-NetFirewallRule
+    ```
+  - If they are **Outbound** blocks (meant to stop VLC reaching the internet): scope them to `Internet` instead of `Any`, so LAN replies to the VM are still permitted:
+    ```powershell
+    Get-NetFirewallRule | Where-Object { $_.DisplayName -match 'VLC' -and $_.Action -eq 'Block' -and $_.Direction -eq 'Outbound' } | Set-NetFirewallRule -RemoteAddress Internet
+    ```
 - **QR code shows a bare IP like `192.168.11.69`** → `PUBLIC_URL` must be a full URL: `PUBLIC_URL=http://192.168.11.69:8004`.
 - **`VLC rejected the password`** → fix `VLC_HTTP_PASSWORD` in `.env` and `docker compose up -d`.
 - **Phone cannot open the page** → use the VM's LAN IP (not the container's 172.x IP); make sure phone and VM share the same network.
